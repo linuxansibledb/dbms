@@ -1,0 +1,44 @@
+Первым делом пропатчим таблицу, чтоб loganalyzer работал
+su - postgres
+psql
+\c Syslog
+alter table systemevents add column processid int;
+Получаем архив с loganalyzer
+
+Ставим пакеты
+
+apt install apache2 php php-pgsql 
+Распаковываем loganalyzer
+
+rm -rf /var/www/html/*
+tar xvf loganalyzer.tar.gz
+mv loganalyzer/src/* /var/www/html/
+touch /var/www/html/config.php
+chmod 666 config.php
+chown www-data:www-data /var/www/html/* -R
+Чуть правим конфигу апача
+
+vim /etc/apache2/apache2.conf
+Ищем AstraMode и меняем на off
+AstraMode off
+Заходим на сервер с логаналайзером
+
+Нажимаем на here
+
+Нажимаем на next
+И еще раз на next
+
+И еще раз на next
+
+Source type -> Database (PDO)
+
+Database Storage Engine -> Postgresql
+
+Database Name -> Syslog
+
+Database User -> postgres
+
+Database Password -> P@ssw0rd
+
+
+Ура победа, жмем finish
