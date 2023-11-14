@@ -1,0 +1,19 @@
+Для отправки приложения в GitLab Container Registry с меткой latest и коротким хэшем коммита, вы можете использовать следующий скрипт в своем CI/CD конфигурационном файле:
+
+```yaml
+script:
+  - export COMMIT_HASH=$(git rev-parse --short HEAD)
+  - # Компиляция и сборка вашего приложения
+  - docker build -t myapp .
+  - docker tag myapp:latest myapp:${COMMIT_HASH}
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  - docker push myapp:latest
+  - docker push myapp:${COMMIT_HASH}
+```
+
+
+В этом примере мы используем команду `git rev-parse` для получения короткого хэша текущего коммита, которое сохраняем в переменную `COMMIT_HASH`. Затем мы компилируем и собираем наше приложение с помощью `docker build`, и добавляем метки latest и короткий хэш коммита с помощью `docker tag`. 
+
+После этого мы выполняем вход в GitLab Container Registry с помощью `docker login`, используя переменные окружения, предоставленные GitLab CI/CD (CI_REGISTRY_USER и CI_REGISTRY_PASSWORD). И, наконец, мы отправляем наше приложение в GitLab Container Registry с помощью `docker push`.
+
+После успешного выполнения этого скрипта, ваше приложение будет доступно в GitLab Container Registry с меткой latest и коротким хэшем коммита.
