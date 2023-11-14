@@ -1,0 +1,89 @@
+Для создания указанной Ansible-роли "client-deploy-role" и выполнения соответствующих настроек, нужно выполнить следующие шаги:
+
+1. Создайте директорию для роли:
+```
+mkdir -p /etc/ansible/roles/client-deploy-role/tasks
+```
+
+2. Создайте файл задачи "main.yml":
+```
+touch /etc/ansible/roles/client-deploy-role/tasks/main.yml
+```
+
+3. Откройте файл "main.yml" и добавьте следующий код:
+```yaml
+---
+- name: Install Firefox browser
+  yum:
+    name: firefox
+    state: present
+
+- name: Install Zabbix-agent
+  yum:
+    name: zabbix-agent
+    state: present
+
+- name: Install Midnight Commander
+  yum:
+    name: mc
+    state: present
+
+- name: Configure sudo access for group1
+  lineinfile:
+    dest: /etc/sudoers
+    line: "%group1 ALL=(ALL) NOPASSWD:ALL"
+
+- name: Create Firefox desktop shortcut
+  template:
+    src: firefox.desktop.j2
+    dest: /home/{{ item }}/Desktop/firefox.desktop
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_items:
+    - user1
+    - user2
+    # Добавьте дополнительные имена пользователей, если необходимо
+
+- name: Remove other desktop shortcuts
+  file:
+    path: "/home/{{ item }}/Desktop/{{ item }}.desktop"
+    state: absent
+  with_items:
+    - user1
+    - user2
+    # Добавьте дополнительные имена пользователей, если необходимо
+```
+
+4. Создайте файл шаблона "firefox.desktop.j2" в директории роли:
+```
+touch /etc/ansible/roles/client-deploy-role/files/firefox.desktop.j2
+```
+
+5. Откройте файл "firefox.desktop.j2" и добавьте следующий код:
+```
+[Desktop Entry]
+Version=1.0
+Name=Firefox
+Comment=Browse the World Wide Web
+GenericName=Web Browser
+Exec=/usr/bin/firefox %u
+Terminal=false
+Icon=firefox
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;application/xml;application/vnd.mozilla.xul+xml;application/rss+xml;application/rdf+xml;image/gif;image/jpeg;image/png;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;x-scheme-handler/chrome;video/webm;application/x-xpinstall;
+StartupNotify=true
+```
+
+6. Теперь можно использовать эту роль в плейбуке "client_install.yml" на машине SRV-BR:
+```yaml
+---
+- hosts: target_hosts
+  become: yes
+  roles:
+    - client-deploy-role
+```
+
+Пожалуйста, добавьте соответствующие значения вместо "target_hosts" в плейбуке "client_install.yml" и замените "user1" и "user2" на необходимые имена пользователей в файлах "main.yml" и "firefox.desktop.j2".
+
+После выполнения данных шагов, вы сможете запустить плейбук "client_install.yml" из директории /etc/ansible для настройки АРМ пользователей на целевых хостах.
