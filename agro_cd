@@ -1,0 +1,88 @@
+Для конфигурации ArgoCD согласно указанным требованиям, вам потребуется создать файл конфигурации Kubernetes YAML, который является манифестом для ArgoCD. Далее приведены шаги, необходимые для выполнения каждого требования:
+
+1. Добавление автоматической синхронизации с GitLab репозиторием приложения:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+spec:
+  destination:
+    server: 'https://kubernetes.default.svc'
+  project: default
+  source:
+    repoURL: 'https://gitlab.com/your-gitlab-repo-url'
+    targetRevision: HEAD
+    path: /path/to/app
+  syncPolicy:
+    automated:
+      selfHeal: true
+```
+
+
+2. Доступ к сервису ArgoCD по адресу `https://argocd.company.prof` можно настроить путем создания Ingress ресурса:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ingress
+spec:
+  tls:
+    - hosts:
+        - argocd.company.prof
+      secretName: argocd-tls-secret
+  rules:
+    - host: argocd.company.prof
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 443
+```
+
+
+3. Развертывание приложения через ArgoCD и его доступность по адресу `https://app.company.prof` можно настроить созданием Kubernetes манифеста приложения и его развертыванием с использованием ArgoCD. Обратитесь к документации ArgoCD, чтобы узнать, как настроить развертывание приложения с использованием GitOps.
+
+4. Добавление ingress-контроллера для обеспечения доступа к приложению через Ingress:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+spec:
+  tls:
+    - hosts:
+        - app.company.prof
+      secretName: app-tls-secret
+  rules:
+    - host: app.company.prof
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: app-service
+                port:
+                  number: 80
+```
+
+
+5. Защита ресурсов кластера (кроме базы данных) при помощи подчиненного центра сертификации требует создания и использования SSL/TLS сертификата для защиты внешнего доступа к кластеру. Создание и настройка сертификата зависит от конкретного инструмента, подчиненного центра сертификации, которым вы пользуетесь.
+
+6. Создание пользователя `admin` с паролем `P@ssw0rd` выполняется следующим образом:
+
+```bash
+$ kubectl -n argocd create secret generic argocd-admin-secret \
+  --from-literal=password=$(echo -n 'P@ssw0rd' | base64)
+```
+
+
+После выполнения этих шагов, у вас должен быть настроен ArgoCD с автоматической синхронизацией с GitLab, доступен по адресу `https://argocd.company.prof`. Ваше приложение должно быть развернуто через ArgoCD и быть доступным по адресу `https://app.company.prof`. К наложению сертификата и защите ресурсов кластера вам понадобится дополнительная конфигурация в зависимости от используемого инструмента.
