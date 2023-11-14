@@ -1,0 +1,59 @@
+Для настройки CI/CD в репозитории `hitech2023-app` на GitLab, следуйте этим шагам:
+
+Шаг 1: Создайте новый репозиторий с названием `infrastruct` на GitLab.
+
+Шаг 2: В репозитории `hitech2023-app`, создайте файл `.gitlab-ci.yml` в корневой директории.
+
+Шаг 3: Откройте файл `.gitlab-ci.yml` и добавьте следующий код для конфигурации CI/CD:
+
+```yaml
+stages:
+  - build_backend
+  - build_frontend
+  - push_container
+
+lint_backend:
+  stage: build_backend
+  script:
+    - cd app-backend
+    - pylint .
+  only:
+    changes:
+      - app-backend/**/*.*
+
+build_frontend:
+  stage: build_frontend
+  script:
+    - cd app-frontend
+    - <команда_для_сборки_фронтенда>
+  only:
+    changes:
+      - app-frontend/**/*.*
+
+push_container:
+  stage: push_container
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:latest-$CI_COMMIT_SHORT_SHA
+  only:
+    - master
+```
+
+Примечание: Замените `<команда_для_сборки_фронтенда>` на фактическую команду, которую необходимо выполнить для сборки фронтенда приложения.
+
+Шаг 4: Закоммитьте и запушьте изменения в репозиторий `hitech2023-app`:
+
+```
+git add .gitlab-ci.yml
+git commit -m "Добавлен файл .gitlab-ci.yml"
+git push origin master
+```
+
+Теперь, при каждом пуше в репозиторий `hitech2023-app`, CI/CD будет выполнять следующие шаги:
+
+- Проверка синтаксиса бэкенда приложения с помощью pylint, только если есть изменения в директории `app-backend`.
+- Сборка фронтенда приложения, только если есть изменения в директории `app-frontend`.
+- Сборка контейнера с приложением и отправка его в GitLab Container Registry с меткой `latest` и коротким хэшем коммита, только при пуше в ветку `master`.
+
+Таким образом, вы настроили CI/CD для вашего проекта `hitech2023-app` согласно заданным требованиям.
