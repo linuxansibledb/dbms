@@ -1,3 +1,0 @@
-For i in {21..30}; do echo
-P@ssw0rd| ipa user-add user§i -first-user -last-§i -passuord ipa group-add-member manager —user-user§i
-done
