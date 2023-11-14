@@ -1,0 +1,219 @@
+Для конфигурации мониторинга состояния кластера MicroK8s при помощи Prometheus и Grafana согласно указанным требованиям, выполните следующие шаги:
+
+1. Установите Prometheus и Grafana в ваш кластер MicroK8s. В MicroK8s это можно сделать с помощью следующих команд:
+
+```bash
+$ microk8s.enable prometheus
+$ microk8s.enable grafana
+```
+
+
+2. Для доступа к Grafana по адресу `https://grafana.company.prof`, создайте ресурс Ingress:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+spec:
+  tls:
+    - hosts:
+        - grafana.company.prof
+      secretName: grafana-tls-secret
+  rules:
+    - host: grafana.company.prof
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: grafana-service
+                port:
+                  number: 3000
+```
+
+
+3. Создайте дашборд Pods. Для этого в Grafana перейдите в раздел "Dashboards" -> "Manage" -> "Create" и используйте следующий JSON-конфиг:
+
+```json
+{
+  "panels": [
+    {
+      "cacheTimeout": null,
+      "datasource": "Prometheus",
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "interval": "10s",
+      "links": [],
+      "mode": "html",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kube_pod_container_resource_limits_cpu_cores",
+          "instant": true
+        },
+        {
+          "expr": "kube_pod_resource_usage_memory_bytes",
+          "refId": "B",
+          "instant": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Pods CPU and Memory",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [],
+      "valueName": "current"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 22,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "Pods",
+  "uid": "pods",
+  "version": 0
+}
+```
+
+
+4. Создайте дашборд Cluster. Для этого в Grafana перейдите в раздел "Dashboards" -> "Manage" -> "Create" и используйте следующий JSON-конфиг:
+
+```json
+{
+  "panels": [
+    {
+      "cacheTimeout": null,
+      "datasource": "Prometheus",
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "interval": "10s",
+      "links": [],
+      "mode": "html",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
+          "instant": true
+        },
+        {
+          "expr": "sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
+          "refId": "B",
+          "instant": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Cluster CPU and Memory",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [],
+      "valueName": "current"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 22,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d",
+      "2d",
+      "7d",
+      "30d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "Cluster",
+  "uid": "cluster",
+  "version": 0
+}
+```
+
+
+5. Создайте пользователя `admin` с паролем `P@ssw0rd` в Grafana. Для этого выполните следующие команды:
+
+```bash
+$ kubectl -n kube-system exec -it $(kubectl -n kube-system get pods -l app=kubernetes-dashboard -o jsonpath='{.items[0].metadata.name}') -- grafana-cli admin reset-admin-password P@ssw0rd
+$ kubectl -n kube-system patch deploy -n kube-system kubernetes-dashboard --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--enable-skip-login"}]'
+```
+
+
+После выполнения всех этих шагов, мониторинг состояния кластера MicroK8s будет доступен по адресу `https://grafana.company.prof`. В Grafana будут созданы дашборды Pods и Cluster, отображающие информацию о CPU и ОЗУ подов и всего кластера суммарно. Вы сможете получить доступ к Grafana под логином `admin` с паролем `P@ssw0rd`.
