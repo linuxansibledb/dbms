@@ -1,0 +1,23 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+ENV['VAGRANT_SERVER_URL'] = 'https://vagrant.elab.pro'
+
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.box = "centos/8"
+  config.ssh.insert_key = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.provider :virtualbox do |v|
+    v.memory = 512
+    v.cpus =2
+  end
+
+  config.vm.define "kernel.update" do |app|
+    app.vm.hostname = "kernel.update"
+  end
+
+end
